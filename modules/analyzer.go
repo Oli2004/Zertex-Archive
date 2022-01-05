@@ -1,11 +1,11 @@
 package modules
 
 import (
+	"XDGv2/injection"
+	"XDGv2/manager"
+	"XDGv2/qtui"
+	"XDGv2/utils"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/injection"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
-	"git.quartzinc.dev/Zertex/XDGv2/qtui"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	"github.com/spf13/viper"
 	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/widgets"
@@ -104,7 +104,7 @@ func (a *AnalyzerModule) GetStructure() error {
 	}
 	a.Injectable.Structure = make([]injection.StructureDatabase, dbC-modifier)
 	strucWg := sync.WaitGroup{}
-	for i:=modifier; i<dbC; i++ {
+	for i := modifier; i < dbC; i++ {
 		database, err := a.Injectable.GetDatabase(i)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -139,7 +139,7 @@ func (a *AnalyzerModule) GetStructure() error {
 			dbItem.SetText(1, fmt.Sprintf("%d Tables", tC))
 			//uiLock.Unlock()
 			twg := sync.WaitGroup{}
-			for j :=0; j < tC; j++ {
+			for j := 0; j < tC; j++ {
 				table, err := a.Injectable.GetTable(database, j)
 				if err != nil {
 					fmt.Println(err.Error())
@@ -163,7 +163,7 @@ func (a *AnalyzerModule) GetStructure() error {
 				go func(database, table string, dbIndex, tbIndex int, tbItem *widgets.QTreeWidgetItem) {
 					defer func() {
 						twg.Done()
-						<- tbSem
+						<-tbSem
 					}()
 
 					cC, err := a.Injectable.GetColumnCount(database, table)
@@ -172,7 +172,7 @@ func (a *AnalyzerModule) GetStructure() error {
 						return
 					}
 					a.Injectable.Structure[dbIndex].Tables[tbIndex].Columns = make([]injection.StructureColumn, cC)
-					for k:=0; k<cC; k++ {
+					for k := 0; k < cC; k++ {
 						column, err := a.Injectable.GetColumn(database, table, k)
 						if err != nil {
 							fmt.Println(err.Error())
@@ -211,10 +211,10 @@ func (a *AnalyzerModule) DumpSelection() {
 				f.Close()
 			}
 		}()
-		sitePath := path.Join(func() string {v,_:=os.Getwd();return v}(), "output", a.Injectable.Base.Hostname())
+		sitePath := path.Join(func() string { v, _ := os.Getwd(); return v }(), "output", a.Injectable.Base.Hostname())
 		os.MkdirAll(sitePath, 0755)
 		fmt.Println("Waiting for rows...")
-		for row := range rowCh{
+		for row := range rowCh {
 			if _, ok := outputMap[fmt.Sprintf("%s-%s", a.Injectable.Base.Hostname(), row.Table)]; !ok {
 				outputMap[fmt.Sprintf("%s-%s", a.Injectable.Base.Hostname(), row.Table)], err = os.Create(path.Join(sitePath, fmt.Sprintf("%s.csv", row.Table)))
 				if err != nil {
@@ -232,7 +232,7 @@ func (a *AnalyzerModule) DumpSelection() {
 	UILock := sync.RWMutex{}
 
 	wwg := sync.WaitGroup{}
-	for i:=0; i < viper.GetInt("analyzer.workers"); i++ {
+	for i := 0; i < viper.GetInt("analyzer.workers"); i++ {
 		wwg.Add(1)
 		go func() {
 			for dump := range dumpCh {
@@ -276,7 +276,7 @@ func (a *AnalyzerModule) DumpSelection() {
 	}
 
 	go func() {
-		for  {
+		for {
 			select {
 			case <-time.After(time.Second):
 				for uiIndex, indexes := range uiMap {
@@ -299,7 +299,7 @@ func (a *AnalyzerModule) DumpSelection() {
 				if tbItem.Selected {
 					UILock.Lock()
 					uiIndex := qtui.SingleSiteWindow.SingleDumpOutput.RowCount()
-					qtui.SingleSiteWindow.SingleDumpOutput.SetRowCount(uiIndex+1)
+					qtui.SingleSiteWindow.SingleDumpOutput.SetRowCount(uiIndex + 1)
 					uiMap[uiIndex] = []int{dbIndex, tbIndex}
 					win := qtui.NewSingleSiteDumpLogWidget(nil)
 
@@ -327,7 +327,7 @@ func (a *AnalyzerModule) DumpSelection() {
 					}
 					//a.Injectable.Structure[dbIndex].Tables[tbIndex].Rows = make([]injection.StructureRow, a.Injectable.Structure[dbIndex].Tables[tbIndex].RowCount)
 
-					for rIndex := 0; rIndex < tbItem.RowCount; rIndex ++ {
+					for rIndex := 0; rIndex < tbItem.RowCount; rIndex++ {
 						dwg.Add(1)
 						dumpCh <- Dump{
 							Database:    dbItem.Name,
@@ -354,7 +354,7 @@ func (a *AnalyzerModule) DumpSelection() {
 		close(f)
 	}()
 	select {
-	case <- f:
+	case <-f:
 		return
 	case <-utils.Done:
 		return

@@ -1,11 +1,11 @@
 package modules
 
 import (
+	"XDGv2/injection"
+	"XDGv2/manager"
+	"XDGv2/qtui"
+	"XDGv2/utils"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/injection"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
-	"git.quartzinc.dev/Zertex/XDGv2/qtui"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	"github.com/corpix/uarand"
 	"github.com/paulbellamy/ratecounter"
 	"github.com/spf13/viper"
@@ -18,15 +18,15 @@ import (
 )
 
 type DumpModule struct {
-	Index int
-	InjCh	chan *injection.Injection
-	RowCh   chan Row
-	Columns int
-	Tables  int
-	Rows    int
+	Index     int
+	InjCh     chan *injection.Injection
+	RowCh     chan Row
+	Columns   int
+	Tables    int
+	Rows      int
 	Whitelist []DumperWhitelistGroup
-	UIMap map[int]*injection.Injection
-	UIMutex sync.RWMutex
+	UIMap     map[int]*injection.Injection
+	UIMutex   sync.RWMutex
 }
 
 func (dm *DumpModule) MarshalWhiteList(whitelist map[string][]string) {
@@ -75,29 +75,29 @@ func (dm *DumpModule) GetWhitelistNameByIndex(index int) string {
 
 type UIMapper struct {
 	Injection *injection.Injection
-	UIBits []*widgets.QTableWidgetItem
+	UIBits    []*widgets.QTableWidgetItem
 }
 
 var Dumper *DumpModule
 
 type Dump struct {
-	Injection *injection.Injection
-	Database string
-	DBIndex int
-	Table string
-	TBIndex int
+	Injection   *injection.Injection
+	Database    string
+	DBIndex     int
+	Table       string
+	TBIndex     int
 	OrderColumn string
-	Columns []string
-	Index int
-	Dwg *sync.WaitGroup
-	Return chan string
-	UIIndex int
+	Columns     []string
+	Index       int
+	Dwg         *sync.WaitGroup
+	Return      chan string
+	UIIndex     int
 }
 
 type Row struct {
-	Site string
-	Table string
-	Row string
+	Site   string
+	Table  string
+	Row    string
 	Header string
 }
 
@@ -110,7 +110,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 	utils.RPMCounter = ratecounter.NewRateCounter(time.Minute)
 	utils.StartTime = time.Now()
 	utils.GlobalSem = make(chan interface{}, viper.GetInt("dumper.threads"))
-	utils.WorkerSem = make(chan interface{}, viper.GetInt("dumper.threads") * viper.GetInt("dumper.workers"))
+	utils.WorkerSem = make(chan interface{}, viper.GetInt("dumper.threads")*viper.GetInt("dumper.workers"))
 
 	dm.RowCh = make(chan Row)
 	dm.InjCh = make(chan *injection.Injection)
@@ -154,7 +154,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 				if !utils.DirExists(siteDir) {
 					os.Mkdir(siteDir, 0755)
 				}
-				if file, ok = fileMap[fmt.Sprintf("%s-%s", dmp.Site,dmp.Table)]; !ok {
+				if file, ok = fileMap[fmt.Sprintf("%s-%s", dmp.Site, dmp.Table)]; !ok {
 					if utils.FileExists(tblFile) {
 						file, err = os.OpenFile(tblFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 						if err != nil {
@@ -178,7 +178,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 	go func() {
 		for {
 			select {
-			case <- time.After(time.Second):
+			case <-time.After(time.Second):
 				dm.UIMutex.Lock()
 				qtui.Main.DumperTableWidget.VerticalScrollBar().SetDisabled(true)
 				for uiIndex, inj := range dm.UIMap {
@@ -186,13 +186,13 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 						continue
 					}
 
-					qtui.Main.DumperTableWidget.SetItem(uiIndex, 0, widgets.NewQTableWidgetItem2(fmt.Sprintf("%s", inj.Base.Hostname()), 0)) // Databases
-					qtui.Main.DumperTableWidget.SetItem(uiIndex, 1, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Databases),0)) // Databases
-					qtui.Main.DumperTableWidget.SetItem(uiIndex, 2, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Tables),0)) // Tables
-					qtui.Main.DumperTableWidget.SetItem(uiIndex, 3, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Columns),0)) // Columns
+					qtui.Main.DumperTableWidget.SetItem(uiIndex, 0, widgets.NewQTableWidgetItem2(fmt.Sprintf("%s", inj.Base.Hostname()), 0))        // Databases
+					qtui.Main.DumperTableWidget.SetItem(uiIndex, 1, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Databases), 0))              // Databases
+					qtui.Main.DumperTableWidget.SetItem(uiIndex, 2, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Tables), 0))                 // Tables
+					qtui.Main.DumperTableWidget.SetItem(uiIndex, 3, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Columns), 0))                // Columns
 					qtui.Main.DumperTableWidget.SetItem(uiIndex, 4, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d/%d", inj.Rows, inj.TotalRows), 0)) // Rows
-					qtui.Main.DumperTableWidget.SetItem(uiIndex, 5, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Errors), 0)) // Errors
-					qtui.Main.DumperTableWidget.SetItem(uiIndex, 6, widgets.NewQTableWidgetItem2(inj.Status, 0)) // Status
+					qtui.Main.DumperTableWidget.SetItem(uiIndex, 5, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d", inj.Errors), 0))                 // Errors
+					qtui.Main.DumperTableWidget.SetItem(uiIndex, 6, widgets.NewQTableWidgetItem2(inj.Status, 0))                                    // Status
 
 					if viper.GetBool("dumper.autoskip") && inj.Errors > viper.GetInt("dumper.autoskipval") && inj.Rows == 0 && inj.TotalRows == 0 {
 						inj.SkipLock.Lock()
@@ -202,7 +202,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 						case <-inj.Skip:
 						}
 						inj.SkipLock.Unlock()
-//						delete(dm.UIMap, uiIndex)
+						//						delete(dm.UIMap, uiIndex)
 					}
 				}
 				qtui.Main.DumperTableWidget.VerticalScrollBar().SetDisabled(false)
@@ -214,7 +214,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 	wg := sync.WaitGroup{}
 	wg.Add(viper.GetInt("dumper.threads"))
 	for i := 0; i < viper.GetInt("dumper.threads"); i++ {
-		utils.GlobalSem<-0
+		utils.GlobalSem <- 0
 		go func(uiindex int) {
 			defer func() {
 				<-utils.GlobalSem
@@ -325,7 +325,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 						inj.Status = fmt.Sprintf("Mapping database %d", i)
 						database, err := inj.GetDatabase(i)
 						if err != nil {
-							utils.LogDebug(fmt.Sprintf("[%s] [%s] %s", inj.Base.Hostname(),database, err.Error()))
+							utils.LogDebug(fmt.Sprintf("[%s] [%s] %s", inj.Base.Hostname(), database, err.Error()))
 							continue
 						}
 						if utils.HasAny(database, inj.GetSystemDBNames()) {
@@ -362,7 +362,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 												}
 
 												//go func(tbl string, rows []string) {
-												inj.TotalRows+=len(rows)
+												inj.TotalRows += len(rows)
 												for _, row := range rows {
 													dm.Rows++
 													inj.Rows++
@@ -416,7 +416,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 							for col, count := range passPossibles {
 								for l := 0; l < count; l++ {
 									pwg.Add(1)
-									tbSem<-0
+									tbSem <- 0
 									go func(database, col string, index int) {
 										defer func() {
 											pwg.Done()
@@ -425,7 +425,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 
 										table, err := inj.GetTableWithColumn(database, col, index, blacklist)
 										if err != nil {
-											utils.LogDebug(fmt.Sprintf("[S:%s] [D:%s] [C:%s:%d]T %s", inj.Base.Hostname(),database, col, index, err.Error()))
+											utils.LogDebug(fmt.Sprintf("[S:%s] [D:%s] [C:%s:%d]T %s", inj.Base.Hostname(), database, col, index, err.Error()))
 											return
 										}
 
@@ -449,7 +449,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 										uWG := sync.WaitGroup{}
 										uWG.Add(len(dm.Whitelist))
 										for wIndex, white := range dm.Whitelist {
-											colSem<-0
+											colSem <- 0
 											go func(wIndex int, white []string) {
 												defer func() {
 													<-colSem
@@ -480,7 +480,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 
 										rC, err := inj.GetRowCount(database, table)
 										if err != nil {
-											utils.LogDebug(fmt.Sprintf("[S:%s] [D:%s] [T:%s] %s", inj.Base.Hostname(),database, table, err.Error()))
+											utils.LogDebug(fmt.Sprintf("[S:%s] [D:%s] [T:%s] %s", inj.Base.Hostname(), database, table, err.Error()))
 											select {
 											case <-inj.Skip:
 												return
@@ -609,7 +609,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 										cwg := sync.WaitGroup{}
 										cwg.Add(cC)
 										for l := 0; l < cC; l++ {
-											colSem<-0
+											colSem <- 0
 											go func(l int) {
 												defer func() {
 													cwg.Done()
@@ -681,7 +681,7 @@ func (dm *DumpModule) Start(injections []*injection.Injection) {
 							}
 							td()
 						}
-						done:
+					done:
 					}
 
 					inj.Status = "Stopping..."
@@ -720,8 +720,8 @@ popoff:
 		close(mini)
 	}()
 	select {
-	case <- mini:
+	case <-mini:
 		dm.Index = 0
-	case <- utils.Kill:
+	case <-utils.Kill:
 	}
 }

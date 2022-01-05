@@ -1,6 +1,9 @@
 package manager
 
 import (
+	"XDGv2/api/client"
+	"XDGv2/qtui"
+	"XDGv2/utils"
 	"bufio"
 	"bytes"
 	"context"
@@ -8,9 +11,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/api/client"
-	"git.quartzinc.dev/Zertex/XDGv2/qtui"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	"github.com/corpix/uarand"
 	"github.com/gosuri/uilive"
 	. "github.com/logrusorgru/aurora"
@@ -28,19 +28,18 @@ import (
 	"time"
 )
 
-const
-(
+const (
 	HTTP = iota
 	SOCKS4
 	SOCKS5
 )
 
 type Proxy struct {
-	Address string
-	Type int
-	Alive bool
-	Sem chan interface{}
-	Auth string
+	Address   string
+	Type      int
+	Alive     bool
+	Sem       chan interface{}
+	Auth      string
 	Transport *http.Transport
 }
 
@@ -77,10 +76,10 @@ func (p *Proxy) ToUrlFunc() func(r *http.Request) (*url.URL, error) {
 
 type ProxyManager struct {
 	Proxies []*Proxy
-	ctx context.Context
-	cancel context.CancelFunc
-	X chan interface{}
-	Client *http.Client
+	ctx     context.Context
+	cancel  context.CancelFunc
+	X       chan interface{}
+	Client  *http.Client
 	torConn *net.TCPConn
 
 	FastClient *fasthttp.Client
@@ -95,8 +94,8 @@ func (pm *ProxyManager) RotateTorIP() {
 var torNewIP = "echo authenticate '\"\"'; echo signal newnym; echo quit"
 
 type Req struct {
-	Request *http.Request
-	Host string
+	Request  *http.Request
+	Host     string
 	Response *chan *http.Response
 }
 
@@ -107,13 +106,13 @@ func init() {
 
 	PManager = &ProxyManager{
 		Proxies: make([]*Proxy, 0),
-		ctx: ctx,
-		cancel: cancel,
-		Client: &http.Client{/*Timeout: time.Duration(viper.GetInt("core.Timeouts")) * time.Second,*/ Jar: nil},
-			FastClient: &fasthttp.Client{
-			MaxConnsPerHost:               0,
-			MaxIdleConnDuration:           -1,
-			MaxResponseBodySize:           2e8,
+		ctx:     ctx,
+		cancel:  cancel,
+		Client:  &http.Client{ /*Timeout: time.Duration(viper.GetInt("core.Timeouts")) * time.Second,*/ Jar: nil},
+		FastClient: &fasthttp.Client{
+			MaxConnsPerHost:     0,
+			MaxIdleConnDuration: -1,
+			MaxResponseBodySize: 2e8,
 			RetryIf: func(request *fasthttp.Request) bool {
 				return false
 			},
@@ -135,7 +134,7 @@ func (pm *ProxyManager) ProxyStringArray() []string {
 }
 
 func (pm *ProxyManager) LoadScanner(scanner *bufio.Scanner, proxyType int) int {
-		for scanner.Scan() {
+	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, ":")
 		var p *Proxy
@@ -145,28 +144,28 @@ func (pm *ProxyManager) LoadScanner(scanner *bufio.Scanner, proxyType int) int {
 			p = &Proxy{Address: line, Type: proxyType, Alive: true, Sem: make(chan interface{}, 10)}
 		}
 		p.Transport = &http.Transport{
-			TLSClientConfig:        &tls.Config{
+			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 				VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 					return nil
 				},
 			},
 			DialContext: (&net.Dialer{
-				Timeout: 10*time.Second,
+				Timeout: 10 * time.Second,
 			}).DialContext,
 			DialTLSContext: (&net.Dialer{
-				Timeout: 10*time.Second,
+				Timeout: 10 * time.Second,
 			}).DialContext,
-			Proxy:                  p.ToUrlFunc(),
-			TLSHandshakeTimeout:    10 * time.Second,
-			DisableCompression:     false,
-			ForceAttemptHTTP2:      false,
-			MaxIdleConns:           100,
-			MaxIdleConnsPerHost:    35,
-			MaxConnsPerHost:        35,
-			IdleConnTimeout:        10 * time.Second,
-			ResponseHeaderTimeout:  time.Duration(viper.GetInt("core.timeout")) * time.Second,
-			TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
+			Proxy:                 p.ToUrlFunc(),
+			TLSHandshakeTimeout:   10 * time.Second,
+			DisableCompression:    false,
+			ForceAttemptHTTP2:     false,
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   35,
+			MaxConnsPerHost:       35,
+			IdleConnTimeout:       10 * time.Second,
+			ResponseHeaderTimeout: time.Duration(viper.GetInt("core.timeout")) * time.Second,
+			TLSNextProto:          make(map[string]func(string, *tls.Conn) http.RoundTripper),
 		}
 		pm.Proxies = append(pm.Proxies, p)
 	}
@@ -197,7 +196,7 @@ func (pm *ProxyManager) LoadCustomerProxies(loading *qtui.LoadingWindow) int {
 	loading.ProgressBar.SetValue(1)
 	loading.Label.SetText("Downloading list...")
 
-	proxies := <- client.XDGAPI.Proxies()
+	proxies := <-client.XDGAPI.Proxies()
 	loading.ProgressBar.SetValue(2)
 
 	loading.Label.SetText("Loading proxies...")
@@ -241,7 +240,7 @@ func (pm *ProxyManager) TestProxies() {
 	done := make(chan interface{})
 	kill := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
-	defer close (sem)
+	defer close(sem)
 	go func() {
 		writer := uilive.New()
 		writer.Start()
@@ -272,8 +271,8 @@ func (pm *ProxyManager) TestProxies() {
 
 	wg.Add(threads)
 
-	for i:=0; i< threads; i++ {
-		sem<-1
+	for i := 0; i < threads; i++ {
+		sem <- 1
 		go func() {
 			defer func() {
 				wg.Done()
@@ -314,7 +313,7 @@ func (pm *ProxyManager) TestProxies() {
 
 	for _, k := range pm.Proxies {
 		select {
-		case <- done:
+		case <-done:
 			goto popoff
 		case proxyChan <- k:
 			continue
@@ -328,14 +327,14 @@ popoff:
 		close(f)
 	}()
 	select {
-	case <- f:
+	case <-f:
 		break
-	case <- kill:
+	case <-kill:
 		break
 	}
 
 	var d string
-	for _,k := range living {
+	for _, k := range living {
 		d += k.Auth + ":" + k.Address + "\r\n"
 	}
 	ioutil.WriteFile("proxies-living.txt", []byte(d), 0644)
@@ -369,28 +368,28 @@ func (pm *ProxyManager) GetRandomProxy() (*Proxy, error) {
 func (pm *ProxyManager) CreateProxyTransport() *http.Transport {
 	//customTransport := http.DefaultTransport.(*http.Transport).Clone()
 	return &http.Transport{
-		TLSClientConfig:        &tls.Config{
+		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 				return nil
 			},
 		},
 		DialContext: (&net.Dialer{
-			Timeout: 5*time.Second,
+			Timeout:   5 * time.Second,
 			KeepAlive: -1,
 		}).DialContext,
-		Proxy:                  pm.ProxyFunc,
-		TLSHandshakeTimeout:    5 * time.Second,
-		DisableKeepAlives:      true,
-		DisableCompression:     false,
-		ForceAttemptHTTP2:      false,
-		MaxIdleConns:           -1,
-		MaxIdleConnsPerHost:    -1,
+		Proxy:               pm.ProxyFunc,
+		TLSHandshakeTimeout: 5 * time.Second,
+		DisableKeepAlives:   true,
+		DisableCompression:  false,
+		ForceAttemptHTTP2:   false,
+		MaxIdleConns:        -1,
+		MaxIdleConnsPerHost: -1,
 		//MaxConnsPerHost:        35,
-		IdleConnTimeout:        time.Nanosecond,
-		ExpectContinueTimeout:  4 * time.Second,
-		ResponseHeaderTimeout:  time.Duration(viper.GetInt("core.timeout")) * time.Second,
-		TLSNextProto:           make(map[string]func(string, *tls.Conn) http.RoundTripper),
+		IdleConnTimeout:       time.Nanosecond,
+		ExpectContinueTimeout: 4 * time.Second,
+		ResponseHeaderTimeout: time.Duration(viper.GetInt("core.timeout")) * time.Second,
+		TLSNextProto:          make(map[string]func(string, *tls.Conn) http.RoundTripper),
 	}
 }
 
@@ -428,7 +427,6 @@ func (pm *ProxyManager) Post(url string, _type string, data string) (*http.Respo
 	}
 	return nil, errors.New("failed post request")
 }
-
 
 func (pm *ProxyManager) Get(_url string, ua string) (*http.Response, string, error) {
 	s := make(chan interface{})
@@ -494,14 +492,14 @@ func (pm *ProxyManager) BaseFastGet(_url, ua string, headers http.Header, remote
 		pm.FastClient.Dial = fasthttpproxy.FasthttpSocksDialer(fmt.Sprintf("%s@%s", proxy.Auth, proxy.Address))
 	}
 
-	for i:=0; i < 3; {
+	for i := 0; i < 3; {
 		if utils.Module != "Dumper" && canfail {
 			i++
 		}
 		err := pm.FastClient.DoTimeout(req, resp, time.Duration(viper.GetInt("core.timeouts"))*time.Second)
 		if err != nil {
 			utils.ErrorCounter++
-			if utils.HasAny(err.Error(), []string {
+			if utils.HasAny(err.Error(), []string{
 				"socks connect",
 				"read tcp",
 			}) {
@@ -541,14 +539,14 @@ func (pm *ProxyManager) BaseGet(_url string, ua string, extratimeout int, header
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
-	for attempt := 0; attempt < 3;  {
+	for attempt := 0; attempt < 3; {
 		if utils.Module != "Dumper" && canfail {
 			attempt++
 		}
 		select {
 		case <-utils.Done:
 			return nil, "", errors.New("exit early")
-		case <- *skip:
+		case <-*skip:
 			return nil, "", errors.New("skipped")
 		default:
 			proxy, err := pm.GetRandomProxy()

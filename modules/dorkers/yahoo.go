@@ -1,8 +1,8 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/corpix/uarand"
 	"net/http"
@@ -24,24 +24,23 @@ func yahooParse(dork string, page int, ret *chan []string) {
 
 	qu.Add("p", dork)
 	qu.Add("fr", "yfp-t")
-	qu.Add("fp","1")
-	qu.Add("toggle","1")
-	qu.Add("cop","mss")
-	qu.Add("ei","UTF-8")
+	qu.Add("fp", "1")
+	qu.Add("toggle", "1")
+	qu.Add("cop", "mss")
+	qu.Add("ei", "UTF-8")
 	qu.Add("pz", "100")
 	qu.Add("xargs", "0")
-	qu.Add("b", fmt.Sprintf("%d", (page * 100) + 1))
+	qu.Add("b", fmt.Sprintf("%d", (page*100)+1))
 	qu.Add("bct", "0")
 
 	u.RawQuery = qu.Encode()
-
 
 	headers := http.Header{}
 	headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 	headers.Add("Accept-Language", "en-US,en;q=0.5")
 	headers.Add("Referrer", "https://www.yahoo.com/")
 
-	for i:=0; i < page; i ++ {
+	for i := 0; i < page; i++ {
 		resp, body, err := manager.PManager.GetWithHeaders(u.String(), uarand.GetRandom(), headers)
 		if err != nil {
 			return

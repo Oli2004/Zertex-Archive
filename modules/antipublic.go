@@ -1,11 +1,11 @@
 package modules
 
 import (
+	"XDGv2/qtui"
+	"XDGv2/utils"
 	"bufio"
 	"database/sql"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/qtui"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/paulbellamy/ratecounter"
@@ -57,12 +57,12 @@ func NewAntiPublic() *AntiPublicModule {
 	}
 
 	return &AntiPublicModule{
-		Index:               0,
-		DB:                  database,
-		CheckPublicUrlQuery: checkurlStmt,
-		InsertUrlQuery:      inserturlStmt,
+		Index:                  0,
+		DB:                     database,
+		CheckPublicUrlQuery:    checkurlStmt,
+		InsertUrlQuery:         inserturlStmt,
 		CheckPublicDomainQuery: checkdomainStmt,
-		InsertDomainQuery: insertdomainStmt,
+		InsertDomainQuery:      insertdomainStmt,
 	}
 }
 
@@ -139,7 +139,7 @@ func (ap *AntiPublicModule) InsertLines(lines []string) (int, error) {
 		} else {
 			u = _u.String()
 		}
-		
+
 		a = append(a, fmt.Sprintf("(\"%s\")", []byte(u)))
 	}
 	var query string
@@ -202,8 +202,8 @@ func (ap *AntiPublicModule) Start(urls []string) {
 	utils.ErrorCounter = 0
 	utils.RateCounter = ratecounter.NewRateCounter(time.Second)
 
-	ap.Public=0
-	ap.Private=0
+	ap.Public = 0
+	ap.Private = 0
 
 	done := make(chan interface{})
 	defer close(done)
@@ -252,6 +252,6 @@ func (ap *AntiPublicModule) Start(urls []string) {
 
 		outputCh <- u
 	}
-	off:
+off:
 	close(outputCh)
 }

@@ -1,9 +1,9 @@
 package modules
 
 import (
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
-	"git.quartzinc.dev/Zertex/XDGv2/modules/dorkers"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
+	"XDGv2/manager"
+	"XDGv2/modules/dorkers"
+	"XDGv2/utils"
 	"github.com/paulbellamy/ratecounter"
 	"github.com/spf13/viper"
 	"net/url"
@@ -12,10 +12,10 @@ import (
 )
 
 type ScrapeModule struct {
-	Index int
-	Dorks []string
-	Urls []string
-	UrlCh chan []string
+	Index  int
+	Dorks  []string
+	Urls   []string
+	UrlCh  chan []string
 	DorkCh chan string
 }
 
@@ -59,8 +59,8 @@ func (sm *ScrapeModule) Start() {
 
 	wg := sync.WaitGroup{}
 	wg.Add(threads)
-	for i:=0; i < threads; i++ {
-		utils.GlobalSem<-0
+	for i := 0; i < threads; i++ {
+		utils.GlobalSem <- 0
 		go func() {
 			defer func() {
 				wg.Done()
@@ -92,10 +92,10 @@ popoff:
 		close(f)
 	}()
 	select {
-	case <- f:
+	case <-f:
 		sm.Index = 0
 		break
-	case <- utils.Kill:
+	case <-utils.Kill:
 		break
 	}
 }

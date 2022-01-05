@@ -1,8 +1,8 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"net/url"
 	"strings"
@@ -16,7 +16,7 @@ uri.addQueryParameter("s", Poco::NumberFormatter::format((page * 50) + 30));
     uri.addQueryParameter("v", "l");
     uri.addQueryParameter("kl", "wt-wt");
 
- */
+*/
 
 func ddgParse(dork string, page int, ret *chan []string) {
 	base := "https://html.duckduckgo.com/html"
@@ -27,8 +27,8 @@ func ddgParse(dork string, page int, ret *chan []string) {
 	}
 	qu := u.Query()
 
-	qu.Add("s", fmt.Sprintf("%d", (page * 50) + 30))
-	qu.Add("dc", fmt.Sprintf("%d", (page * 30) + 1))
+	qu.Add("s", fmt.Sprintf("%d", (page*50)+30))
+	qu.Add("dc", fmt.Sprintf("%d", (page*30)+1))
 	qu.Add("o", "json")
 	qu.Add("api", "/d.js")
 	qu.Add("v", "l")
@@ -36,7 +36,7 @@ func ddgParse(dork string, page int, ret *chan []string) {
 
 	u.RawQuery = qu.Encode()
 
-	for i:=0; i < page; i++ {
+	for i := 0; i < page; i++ {
 		resp, err := manager.PManager.Post(u.String(), "application/x-www-form-urlencoded", fmt.Sprintf("q=%s&b=&kl=&df=", dork))
 		if err != nil {
 			return

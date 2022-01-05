@@ -1,12 +1,12 @@
 package dorkers
 
 import (
-//	"context"
+	//	"context"
+	"XDGv2/utils"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	cse "google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/googleapi/transport"
-//	"google.golang.org/api/option"
+	//	"google.golang.org/api/option"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,7 +15,7 @@ import (
 var Key = "AIzaSyCkq0momttTTPL5tUJZv8kNEGE3SXC_gYE"
 
 func googleApiParse(dork string, page int) []string {
-/*	bases := []string{
+	/*	bases := []string{
 		"https://cse.google.com/cse/element/v1",
 		//"https://www.google.co.uk/search",
 		//"https://www.google.ru/search",
@@ -28,8 +28,8 @@ func googleApiParse(dork string, page int) []string {
 	//ctrans := manager.ProxyToTransport(manager.PManager.ProxyFunc())
 
 	apiTrans := &transport.APIKey{
-		Key:       Key,
-	//	Transport: ctrans,
+		Key: Key,
+		//	Transport: ctrans,
 	}
 
 	client := http.DefaultClient
@@ -37,7 +37,7 @@ func googleApiParse(dork string, page int) []string {
 
 	//if k, err := cse.NewService(context.Background(), option.WithHTTPClient(client),option.WithAPIKey("AIzaSyCkq0momttTTPL5tUJZv8kNEGE3SXC_gYE")); err == nil {
 
-		//Searcher = cse.NewCseService(k)
+	//Searcher = cse.NewCseService(k)
 	//}
 
 	//var err error
@@ -56,27 +56,27 @@ func googleApiParse(dork string, page int) []string {
 	}
 	utils.RateCounter.Incr(1)
 
-/*
+	/*
 
-	for _, base := range bases {
-		resp, err := manager.PManager.Get(buildGoogleApiUrl(dork, base, "en", page), uarand.GetRandom())
-		if err != nil {
-			continue
-		}
-
-		raw, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		buf := strings.TrimPrefix(strings.TrimSuffix(strings.ReplaceAll(strings.ReplaceAll(string(raw), "/*O_o/", ""), "\n", ""), ");"), "google.search.cse.api4846")
-
-		var SearchResult *Search
-
-		if err = json.Unmarshal([]byte(buf), &SearchResult); err == nil {
-			for _, res := range SearchResult.Results {
-				out = append(out, res.UnescapedURL)
+		for _, base := range bases {
+			resp, err := manager.PManager.Get(buildGoogleApiUrl(dork, base, "en", page), uarand.GetRandom())
+			if err != nil {
+				continue
 			}
-		}
-	}*/
+
+			raw, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			buf := strings.TrimPrefix(strings.TrimSuffix(strings.ReplaceAll(strings.ReplaceAll(string(raw), "/*O_o/", ""), "\n", ""), ");"), "google.search.cse.api4846")
+
+			var SearchResult *Search
+
+			if err = json.Unmarshal([]byte(buf), &SearchResult); err == nil {
+				for _, res := range SearchResult.Results {
+					out = append(out, res.UnescapedURL)
+				}
+			}
+		}*/
 	return out
 }
 

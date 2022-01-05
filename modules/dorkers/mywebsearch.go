@@ -1,7 +1,7 @@
 package dorkers
 
 import (
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
+	"XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/corpix/uarand"
 	"net/url"
@@ -16,7 +16,7 @@ uri.addQueryParameter("p2","^MYWEBSEARCHDEFAULT^^^");
     uri.addQueryParameter("searchfor",dork);
     uri.addQueryParameter("st", "hp");
 
- */
+*/
 
 func mwsParse(dork string, page int, ret *chan []string) {
 	base := "https://search.mywebsearch.com/mywebsearch/GGmain.jhtml"
@@ -35,7 +35,7 @@ func mwsParse(dork string, page int, ret *chan []string) {
 
 	u.RawQuery = qu.Encode()
 
-	for i:=0; i < page; i++ {
+	for i := 0; i < page; i++ {
 		resp, body, err := manager.PManager.Get(u.String(), uarand.GetRandom())
 		if err != nil {
 			return
