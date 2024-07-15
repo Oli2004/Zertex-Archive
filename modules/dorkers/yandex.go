@@ -1,8 +1,8 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/corpix/uarand"
 	"net/url"
@@ -23,7 +23,7 @@ func yandexParse(dork string, page int, ret *chan []string) {
 
 	u.RawQuery = qu.Encode()
 
-	for i:=0; i < page; i++ {
+	for i := 0; i < page; i++ {
 		resp, body, err := manager.PManager.Get(u.String(), uarand.GetRandom())
 		if err != nil {
 			return

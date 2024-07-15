@@ -1,8 +1,8 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/corpix/uarand"
 	"net/url"
@@ -19,7 +19,7 @@ uri.addQueryParameter("count", "10");
     uri.addQueryParameter("locale", "en_US");
     uri.addQueryParameter("uiv", "4");
 
- */
+*/
 
 func qwantParse(dork string, page int, ret *chan []string) {
 	defer close(*ret)
@@ -32,7 +32,7 @@ func qwantParse(dork string, page int, ret *chan []string) {
 
 	qu.Add("q", dork)
 	qu.Add("count", "10")
-	qu.Add("offset", fmt.Sprintf("%d", page * 10))
+	qu.Add("offset", fmt.Sprintf("%d", page*10))
 	qu.Add("t", "web")
 	qu.Add("device", "desktop")
 	qu.Add("safesearch", "0")

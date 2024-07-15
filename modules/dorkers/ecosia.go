@@ -1,8 +1,8 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/corpix/uarand"
 	"net/url"
@@ -14,7 +14,7 @@ uri.addQueryParameter("q", dork);
     uri.addQueryParameter("p", Poco::NumberFormatter::format(page));
     uri.addQueryParameter("c", "en");
 
- */
+*/
 
 func ecosiaParse(dork string, page int, ret *chan []string) {
 	base := "https://www.ecosia.org/search"
@@ -31,7 +31,7 @@ func ecosiaParse(dork string, page int, ret *chan []string) {
 
 	u.RawQuery = qu.Encode()
 
-	for i:=0; i < page; i++ {
+	for i := 0; i < page; i++ {
 		resp, body, err := manager.PManager.Get(u.String(), uarand.GetRandom())
 		if err != nil {
 			return

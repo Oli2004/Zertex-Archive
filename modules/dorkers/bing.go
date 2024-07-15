@@ -1,8 +1,8 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"net/url"
@@ -30,7 +30,7 @@ func bingParse(dork string, page int, ret *chan []string) {
 	headers := http.Header{}
 	headers.Add("SRCHHPGUSR", "NEWWND=0&NRSLT=50&SRCHLANG=&AS=1&ADLT=DEMOTE&NNT=1&BRW=W&BRH=S&CW=1920&CH=560&DPR=1&UTC=-300&DM=0&HV=1604285262&WTS=63739882180")
 
-	for i:=0; i < page; i++ {
+	for i := 0; i < page; i++ {
 		_, body, err := manager.PManager.GetWithHeaders(u.String(), "Nokia2700c/10.0.011 (SymbianOS/9.4; U; Series60/5.0 Opera/5.0; Profile/MIDP-2.1 Configuration/CLDC-1.1 ) AppleWebKit/525 (KHTML, like Gecko) Safari/525 3gpp-gba", headers)
 		if err != nil {
 			return
@@ -62,7 +62,7 @@ func bingParse(dork string, page int, ret *chan []string) {
 
 		*ret <- o
 
-		qu.Set("start", fmt.Sprintf("%d", (i*10) + 1))
+		qu.Set("start", fmt.Sprintf("%d", (i*10)+1))
 		/*if link, foundNext := doc.Find("a.sb_pagN").Attr("href"); foundNext {
 			u, _ = u.Parse(link)
 		} else {

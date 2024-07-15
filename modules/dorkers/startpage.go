@@ -1,13 +1,13 @@
 package dorkers
 
 import (
+	"XDGv2/manager"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/manager"
 	"github.com/PuerkitoBio/goquery"
 	"strings"
 )
 
-func startpageParse(dork string, page int, ret *chan []string)  {
+func startpageParse(dork string, page int, ret *chan []string) {
 	base := "https://www.startpage.com/sp/search"
 
 	for i := 0; i < page; i++ {

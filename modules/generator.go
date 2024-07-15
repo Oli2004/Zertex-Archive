@@ -1,11 +1,11 @@
 package modules
 
 import (
+	"XDGv2/qtui"
+	"XDGv2/utils"
 	"bufio"
 	"errors"
 	"fmt"
-	"git.quartzinc.dev/Zertex/XDGv2/qtui"
-	"git.quartzinc.dev/Zertex/XDGv2/utils"
 	"github.com/spf13/viper"
 	"github.com/therecipe/qt/widgets"
 	"log"
@@ -18,29 +18,29 @@ import (
 )
 
 type GeneratorModule struct {
-	Index int
+	Index      int
 	Parameters map[string]*Parameter
-	Patterns []*Pattern
-	WordChan chan string
-	UIMap map[int]int
-	UILock sync.RWMutex
+	Patterns   []*Pattern
+	WordChan   chan string
+	UIMap      map[int]int
+	UILock     sync.RWMutex
 }
 
 type Pattern struct {
-	PatternStr  string
-	Prefixes    []string
-	TotalDorks int
+	PatternStr     string
+	Prefixes       []string
+	TotalDorks     int
 	DorksGenerated int
 }
 
 type Parameter struct {
-	Name string //`json:"Name"`
-	Prefix string 	//`json:"Prefix"`
+	Name     string //`json:"Name"`
+	Prefix   string //`json:"Prefix"`
 	FilePath string //`json:"FilePath"`
-	Data []string
+	Data     []string
 }
 
-var	Generator *GeneratorModule
+var Generator *GeneratorModule
 
 func NewGenerator() *GeneratorModule {
 	Generator = &GeneratorModule{
@@ -55,15 +55,14 @@ func NewGenerator() *GeneratorModule {
 		Generator.Parameters[param.Prefix] = param
 	}
 
-
 	for _, pattern := range viper.GetStringSlice("generator.Patterns") {
 		re, _ := regexp.Compile(`\(([^()]+)\)`)
 		if strings.TrimSpace(pattern) != "" {
-			if m := re.FindAllString(pattern, -1); m != nil{
+			if m := re.FindAllString(pattern, -1); m != nil {
 				Generator.Patterns = append(Generator.Patterns, &Pattern{
-					Prefixes:    m,
+					Prefixes:   m,
 					TotalDorks: 1,
-					PatternStr:  pattern,
+					PatternStr: pattern,
 				})
 			}
 		}
@@ -83,7 +82,7 @@ func (p *Parameter) GetData() []string {
 		panic(err.Error())
 	}
 	if f, err := os.Open(path.Join(cur, "params", p.FilePath)); err == nil {
-		scanner  := bufio.NewScanner(f)
+		scanner := bufio.NewScanner(f)
 		var data []string
 		for scanner.Scan() {
 			data = append(data, scanner.Text())
@@ -94,14 +93,14 @@ func (p *Parameter) GetData() []string {
 	return p.Data
 }
 
-func (gm *GeneratorModule) Combinations() error{
+func (gm *GeneratorModule) Combinations() error {
 	for _, pattern := range gm.Patterns {
 		pattern.TotalDorks = 1
 		pattern.DorksGenerated = 0
-		for _, prefix := range pattern.Prefixes{
-			if _, exists := gm.Parameters[prefix]; exists{
+		for _, prefix := range pattern.Prefixes {
+			if _, exists := gm.Parameters[prefix]; exists {
 				pattern.TotalDorks *= len(gm.Parameters[prefix].GetData())
-			}else{
+			} else {
 				return errors.New(fmt.Sprintf("Parameter %s on Pattern %s has not been created", prefix, pattern.PatternStr))
 			}
 		}
@@ -110,14 +109,13 @@ func (gm *GeneratorModule) Combinations() error{
 }
 
 type Prefix struct {
-	Key string
+	Key  string
 	Data string
 }
 
-
 func (gm *GeneratorModule) Start() error {
 	err := gm.Combinations()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -134,11 +132,11 @@ func (gm *GeneratorModule) Start() error {
 	go func() {
 		for dork := range gm.WordChan {
 			select {
-			case <- done:
+			case <-done:
 				return
 			default:
 			}
-			f.WriteString(dork+"\r\n")
+			f.WriteString(dork + "\r\n")
 		}
 	}()
 
@@ -147,7 +145,7 @@ func (gm *GeneratorModule) Start() error {
 			select {
 			case <-done:
 				return
-			case <- time.After(time.Second):
+			case <-time.After(time.Second):
 				for index, pattern := range gm.Patterns {
 					qtui.Main.TableGenerator.SetItem(index, 0, widgets.NewQTableWidgetItem2(pattern.PatternStr, 0))
 					qtui.Main.TableGenerator.SetItem(index, 1, widgets.NewQTableWidgetItem2(fmt.Sprintf("%d/%d", pattern.DorksGenerated, pattern.TotalDorks), 0))
@@ -170,7 +168,7 @@ func (gm *GeneratorModule) Start() error {
 			doneChan := make(chan interface{})
 
 			for _, prefix := range pattern.Prefixes {
-				wordChan :=  make(chan *Prefix, 1)
+				wordChan := make(chan *Prefix, 1)
 				prefixSem = append(prefixSem, wordChan)
 				pwg.Add(1)
 
@@ -193,15 +191,14 @@ func (gm *GeneratorModule) Start() error {
 							}
 						}
 					}
-					time.Sleep(100*time.Millisecond)
+					time.Sleep(100 * time.Millisecond)
 				}(prefix, pattern)
 			}
-
 
 			go func() {
 				for {
 					select {
-					case <- doneChan:
+					case <-doneChan:
 						return
 					case <-utils.Done:
 						return
@@ -210,17 +207,17 @@ func (gm *GeneratorModule) Start() error {
 
 					dork := pattern.PatternStr
 					for _, word := range prefixSem {
-						if a := <- word; a != nil {
+						if a := <-word; a != nil {
 							dork = strings.ReplaceAll(dork, a.Key, a.Data)
 						}
 					}
 
 					gm.WordChan <- dork
 					pattern.DorksGenerated++
-					if qtui.Main.GeneratorLimiterCheckbox.IsChecked() && pattern.DorksGenerated == qtui.Main.GeneratorLimiterSpinbox.Value(){
+					if qtui.Main.GeneratorLimiterCheckbox.IsChecked() && pattern.DorksGenerated == qtui.Main.GeneratorLimiterSpinbox.Value() {
 						close(utils.Done)
 						for _, a := range prefixSem {
-							<- a
+							<-a
 						}
 						return
 					}
@@ -230,7 +227,7 @@ func (gm *GeneratorModule) Start() error {
 			pwg.Wait()
 			close(doneChan)
 			for _, a := range prefixSem {
-				close (a)
+				close(a)
 			}
 		}(gm.Index, gm.Patterns[gm.Index])
 	}
